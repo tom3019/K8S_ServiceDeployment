@@ -1,0 +1,25 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: {{(print .Values.service "-destinationRule") | lower | quote }}
+  namespace: {{.Values.namespace | lower | quote}}
+  labels:
+    app.kubernetes.io/name: {{ .Values.service | lower | quote }}
+    app.kubernetes.io/part-of: {{ .Values.system | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+spec:
+  host: {{(printf "%s-service.%s.svc.cluster.local" .Values.service .Values.namespace) | lower}}
+{{- if ( default false .Values.useCanary ) }}
+  subsets:
+    - name: canary
+      labels:
+        app: {{ .Values.service | lower | quote }}
+    - name: stable
+      labels:
+        app: {{ .Values.service | lower | quote }}
+{{- else }}
+  subsets:
+    - name: {{ (print "v" .Values.version) | quote }}
+      labels:
+        version: {{ .Values.version | quote }}
+{{- end }}

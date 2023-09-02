@@ -1,0 +1,72 @@
+namespace: system
+service: system-webservice-mps
+system: system
+useCanary: false
+version: 1
+
+replicaCount:
+  default: 1
+
+revisionHistoryLimit: 3
+maxUnavailable: 1
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 5
+  targetAverageCpuUtilization: 90
+  
+image:
+  repository: imagename
+  tag: "20221130.1-t"
+  containerPort: 80
+  imagePullPolicy: IfNotPresent
+
+istio:
+  containerName: istio-proxy
+  repository: docker.io/istio/proxyv2
+  tag: "1.15.2"
+ 
+servicePort: 8004
+domainName: "*"
+env:
+  LANG: "zh-TW.UTF-8"
+  TZ: "Asia/Taipei"
+  ASPNETCORE_ENVIRONMENT: "Development"
+nodePort: 30004
+
+resources:
+  requests:
+    memory: "400Mi"
+    cpu: "50m"
+  limits:
+    memory: "800Mi"
+    cpu: "2000m"
+
+# ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+# Probe settings (use Kubernetes syntax)
+# Optional
+# 以下設定參數可依據服務狀況加入
+# initialDelaySeconds = 等待幾秒後再開始第一次檢測，可避免容器啟動過久導致初期錯誤與誤重啟，預設 0 秒
+# failureThreshold = 碰到失敗或 timeout 時，要重試的次數，預設 3 次，最小 1 次
+# periodSeconds = 每次探測間隔，預設 10 秒，最小 1 秒
+# timeoutSeconds = 每次檢測時的 timeout 時長，預設 1 秒，如果已知服務的 health 頁面會很慢時可調整
+probes:
+  # 服務啟動狀態檢測，通過後就會開始 liveness, readiness 探測
+  # 有設定 startup probe 就可以評估移除 liveness/readiness 的 initialDelaySeconds
+  startupProbe:
+    httpGet:
+      path: /health
+      port: 80
+    initialDelaySeconds: 5
+    failureThreshold: 3
+    periodSeconds: 10
+  # 服務存活狀態檢測
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 80
+  # 服務就緒狀態檢測
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 80

@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{(print .Values.service "-ingressgateway") | lower }}
+  namespace: istio-ingress
+spec:
+  selector:
+    matchLabels:
+      istio: {{(print .Values.service "-ingressgateway") | lower }}
+  template:
+    metadata:
+      annotations:
+        inject.istio.io/templates: gateway
+      labels:
+        istio: {{(print .Values.service "-ingressgateway") | lower }}
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - name: {{.Values.istio.containerName}}
+          image: {{printf "%s:%s" .Values.istio.repository .Values.istio.tag}}

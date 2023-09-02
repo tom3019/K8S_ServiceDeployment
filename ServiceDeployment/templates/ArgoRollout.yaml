@@ -1,0 +1,36 @@
+{{- if ( default false .Values.useCanary ) }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ .Values.service | lower | quote }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.service | lower | quote }}
+    app.kubernetes.io/part-of: {{ .Values.system | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+  namespace: {{.Values.namespace | lower | quote}}
+spec:
+  replicas: {{ .Values.replicaCount.default }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service | lower | quote }}
+      version: {{ .Values.version | quote }}
+  workloadRef: 
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{(print .Values.service "-deployment")| lower | quote }}
+  strategy:
+    canary:
+      trafficRouting:
+        istio:
+          virtualService: 
+            name: {{(print .Values.service "-virtualService") | lower | quote }}        # required
+          destinationRule:
+            name: {{(print .Values.service "-destinationRule") | lower | quote }}   # required
+            canarySubsetName: canary  # required
+            stableSubsetName: stable  # required
+      steps:
+      - setWeight: 5
+      - pause:
+          duration: 10m
+{{- end }}

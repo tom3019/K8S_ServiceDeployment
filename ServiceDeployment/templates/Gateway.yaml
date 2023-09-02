@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: {{(print .Values.service "-gateway") | lower | quote }}
+  namespace: {{.Values.namespace | lower | quote}}
+  labels:
+    app.kubernetes.io/name: {{ .Values.service | lower | quote }}
+    app.kubernetes.io/part-of: {{ .Values.system | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+spec:
+  selector:
+    istio: {{(print .Values.service "-ingressgateway") | lower }}
+  servers:
+  - port:
+      number: {{.Values.servicePort}}
+      name: http
+      protocol: HTTP
+    hosts:
+    - {{.Values.domainName | quote}}
